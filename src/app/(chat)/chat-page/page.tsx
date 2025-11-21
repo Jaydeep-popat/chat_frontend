@@ -61,8 +61,7 @@ const ChatPage = () => {
       try {
       const userRes = await axios.get<ApiResponse<ApiUser>>("/api/users/getCurrentUser", { withCredentials: true })
         const userData = userRes.data.data
-        console.log('🔍 Current user data:', userData);
-        console.log('🔍 isOnline status:', userData.isOnline);
+        // Current user data loaded
       
       // Set user data first
       setCurrentUserId(userData._id)
@@ -70,7 +69,7 @@ const ChatPage = () => {
         
       // Small delay to ensure state is updated before socket connection
       setTimeout(() => {
-        console.log('🔄 User data set, socket should connect now');
+        // User data set, socket should connect now
       }, 100);
 
       const chatRes = await getChatList()
@@ -80,8 +79,8 @@ const ChatPage = () => {
 
       setUsers(formattedUsers)
       setSelectedUser((prev) => prev ?? formattedUsers[0] ?? null)
-      } catch (error) {
-        console.error("Error fetching user or chat data:", error)
+      } catch {
+        // Error fetching user or chat data
       } finally {
         setLoading(false)
       }
@@ -90,9 +89,6 @@ const ChatPage = () => {
   // Socket event handlers
   const socketEvents = {
     onMessageReceived: useCallback((message: SocketMessagePayload) => {
-      console.log('📨 Chat page - Message received:', message);
-      console.log('👤 Current user ID:', currentUserId);
-      console.log('🎥 Selected user:', selectedUser?.userId);
       const senderDetails = typeof message.sender === "string" ? undefined : message.sender;
       const fromId = senderDetails?._id || (typeof message.sender === "string" ? message.sender : undefined);
       
@@ -156,7 +152,6 @@ const ChatPage = () => {
     }, [currentUserId, selectedUser]),
 
     onUserOnline: useCallback((userId: string) => {
-      console.log('🟢 User came online:', userId);
       setUsers(prev => prev.map(user => 
         user.userId === userId ? { ...user, isOnline: true } : user
       ));
@@ -166,7 +161,6 @@ const ChatPage = () => {
     }, []),
 
     onUserOffline: useCallback((userId: string) => {
-      console.log('🔴 User went offline:', userId);
       setUsers(prev => prev.map(user => 
         user.userId === userId ? { ...user, isOnline: false } : user
       ));
@@ -206,7 +200,6 @@ const ChatPage = () => {
     }, []),
 
     onConnectionConfirmed: useCallback((data: { userId: string; status: string; message: string }) => {
-      console.log('✅ Connection confirmed for user:', data);
       fetchUserAndChats();
       
       // Update current user's online status
@@ -221,13 +214,7 @@ const ChatPage = () => {
   
   // Debug socket connection status
   useEffect(() => {
-    console.log('🔌 Socket connection status:', { isConnected, currentUserId });
-    if (currentUserId && !isConnected) {
-      console.log('⚠️ User ID available but socket not connected - potential issue');
-    }
-    if (!currentUserId && isConnected) {
-      console.log('⚠️ Socket connected but no user ID - this should not happen');
-    }
+    // Socket connection status monitoring
   }, [isConnected, currentUserId]);
   
   // Periodic refresh of online users
@@ -254,8 +241,7 @@ const ChatPage = () => {
         formatMessage(msg, currentUserId)
       );
       setMessages(formattedMessages);
-    } catch (error) {
-      console.error("Error loading messages:", error);
+    } catch {
       setMessages([]);
     } finally {
       setMessagesLoading(false);
@@ -272,7 +258,7 @@ const ChatPage = () => {
       !messages[messages.length - 1].isRead
     ) {
       const lastMsg = messages[messages.length - 1];
-      markMessageAsRead(lastMsg.id).catch(console.error);
+      markMessageAsRead(lastMsg.id).catch(() => {});
     }
   }, [messages, currentUserId, selectedUser]);
 
@@ -306,8 +292,8 @@ const ChatPage = () => {
       const response = await axios.get<ApiResponse<DirectoryUser[]>>("/api/users/getAlluser", { withCredentials: true })
       const filteredUsers = response.data.data.filter((user) => user._id !== currentUserId)
       setAllUsers(filteredUsers)
-    } catch (error) {
-      console.error("Error fetching all users:", error)
+    } catch {
+      // Error fetching all users
     }
   }
 
@@ -316,8 +302,6 @@ const ChatPage = () => {
     try {
       const response = await axios.post<ApiResponse<DirectoryUser[]>>("/api/users/getOnlineUsers", {}, { withCredentials: true })
       const onlineUserIds = response.data.data.map((user) => user._id)
-      
-      console.log('🟢 Online users fetched:', onlineUserIds);
       
       setAllUsers((prevUsers) =>
         prevUsers.map((user) => ({
@@ -333,8 +317,8 @@ const ChatPage = () => {
           isOnline: onlineUserIds.includes(user.userId)
         }))
       )
-    } catch (error) {
-      console.error("Error fetching online users:", error)
+    } catch {
+      // Error fetching online users
     }
   }
 
@@ -441,7 +425,6 @@ const ChatPage = () => {
 
       // Send text message
       const response = await sendTextMessage(selectedUser.userId, messageToSend);
-      console.log('📤 Message sent via HTTP API:', response);
 
         // Update temp message with real ID
       setMessages(prev => prev.map(msg => 
@@ -462,14 +445,9 @@ const ChatPage = () => {
       ));
 
       // Manual socket notification as fallback (if needed)
-      console.log('🔄 Checking if receiver should be notified:', {
-        receiverId: selectedUser.userId,
-        senderId: currentUserId,
-        socketConnected: isConnected
-      });
 
-    } catch (error) {
-      console.error("Error sending message:", error);
+    } catch {
+      // Error sending message
       // Remove optimistic message on error
       setMessages(prev => prev.filter(msg => !msg.id.startsWith('temp-')));
       if (!selectedFile) {
@@ -554,8 +532,8 @@ const ChatPage = () => {
             : m
         ));
       }
-      } catch (err) {
-      console.error(`Failed to ${action} message:`, err);
+      } catch {
+      // Failed to perform message action
     }
   };
 
@@ -670,7 +648,6 @@ const ChatPage = () => {
                         currentUser?.isOnline ? "bg-green-500" : "bg-red-500"
                       }`}
                       title={`Socket: ${isConnected ? "Connected" : "Disconnected"} - User: ${currentUser?.isOnline ? "Online" : "Offline"} - Combined: ${isConnected && currentUser?.isOnline ? "Should be Green" : "Should be Red"}`}
-                      onClick={() => console.log('🔍 Status Debug:', { isConnected, userOnline: currentUser?.isOnline, combined: isConnected && currentUser?.isOnline })}
                     />
                   </div>
                   {/* Username text - appears on hover */}

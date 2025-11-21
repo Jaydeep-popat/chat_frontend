@@ -40,8 +40,8 @@ export async function middleware(request: NextRequest) {
         url.searchParams.set("redirect", pathname);
         return NextResponse.redirect(url);
       }
-    } catch (error) {
-      console.error("Token verification failed:", error);
+    } catch {
+      // Token verification failed
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirect", pathname);

@@ -30,9 +30,9 @@ const UpdateDetailsPage = () => {
           displayName: user.displayName || "",
           email: user.email || ""
         });
-      } catch (error) {
+      } catch {
         alert("Failed to fetch user data.");
-        console.error("Error fetching user:", error);
+        // Error fetching user data
       } finally {
         setFetching(false);
       }
@@ -58,9 +58,9 @@ const UpdateDetailsPage = () => {
       );
       alert("Profile updated successfully!");
       router.push("/profile");
-    } catch (error) {
+    } catch {
       alert("Failed to update profile.");
-      console.error("Error updating:", error);
+      // Error updating profile
     } finally {
       setLoading(false);
     }

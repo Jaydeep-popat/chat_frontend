@@ -51,8 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         setUser(null);
       }
-    } catch (error) {
-      console.log('Auth check failed:', error);
+    } catch {
       setUser(null);
     } finally {
       setLoading(false);
@@ -82,8 +81,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         withCredentials: true,
       });
       setUser(null);
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch {
+      // Logout error occurred
       // Even if logout fails, clear user state
       setUser(null);
     }

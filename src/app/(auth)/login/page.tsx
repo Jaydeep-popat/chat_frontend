@@ -61,7 +61,7 @@ function Login() {
     
     try {
       await login(loginData)
-      console.log("Login successful")
+      // Login successful
       
       // Redirect will be handled by useEffect when user state changes
     } catch (error: unknown) {

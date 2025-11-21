@@ -60,7 +60,6 @@ export const sendTextMessage = async (receiver: string, content: string): Promis
     });
     return response.data.data;
   } catch (error) {
-    console.error('Error sending text message:', error);
     throw error;
   }
 };
@@ -98,7 +97,6 @@ export const sendFileMessage = async (
     });
     return response.data.data;
   } catch (error) {
-    console.error('Error sending file message:', error);
     throw error;
   }
 };
@@ -119,7 +117,6 @@ export const getMessages = async (params: GetMessagesRequest): Promise<MessagesR
     });
     return response.data.data;
   } catch (error) {
-    console.error('Error getting messages:', error);
     throw error;
   }
 };
@@ -132,7 +129,6 @@ export const getChatList = async (): Promise<ChatConversation[]> => {
     });
     return response.data.data;
   } catch (error) {
-    console.error('Error getting chat list:', error);
     throw error;
   }
 };
@@ -144,7 +140,6 @@ export const markMessageAsRead = async (messageId: string): Promise<void> => {
       withCredentials: true
     });
   } catch (error) {
-    console.error('Error marking message as read:', error);
     throw error;
   }
 };
@@ -156,7 +151,6 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
       withCredentials: true
     });
   } catch (error) {
-    console.error('Error deleting message:', error);
     throw error;
   }
 };
@@ -171,7 +165,6 @@ export const editMessage = async (messageId: string, content: string): Promise<A
     });
     return response.data.data;
   } catch (error) {
-    console.error('Error editing message:', error);
     throw error;
   }
 };
@@ -184,7 +177,6 @@ export const getUnreadCount = async (): Promise<number> => {
     });
     return response.data.data.unreadCount;
   } catch (error) {
-    console.error('Error getting unread count:', error);
     throw error;
   }
 };

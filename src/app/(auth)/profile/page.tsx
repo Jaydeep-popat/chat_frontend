@@ -25,8 +25,8 @@ const Profile = () => {
           { withCredentials: true }
         );
         setUser(res.data.data);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
+      } catch {
+        // Error fetching user data
       } finally {
         setLoading(false);
       }
@@ -38,15 +38,15 @@ const Profile = () => {
   // Logout user
   const logout = async () => {
     try {
-      console.log("Logging out...");
+      // Logging out
       await axios.post(
         "/api/users/logout",
         {},
         { withCredentials: true }
       );
       router.push("/login");
-    } catch (error) {
-      console.error("Error during logout:", error);
+    } catch {
+      // Error during logout
     }
   };
 
@@ -59,12 +59,8 @@ const Profile = () => {
         { withCredentials: true }
       );
       setAllUsers(res.data.data);
-    } catch (error: unknown) {
-      const apiError = error as { response?: { data?: unknown }; message?: string };
-      console.error(
-        "Error fetching all users:",
-        apiError.response?.data || apiError.message || "Unknown error"
-      );
+    } catch {
+      // Error fetching all users
     } finally {
       setLoadingUsers(false);
     }
@@ -95,9 +91,9 @@ const Profile = () => {
         };
       });
       alert("Profile picture updated!");
-    } catch (error) {
+    } catch {
       alert("Failed to update profile picture.");
-      console.error("Error updating profile picture:", error);
+      // Error updating profile picture
     } finally {
       setUploading(false);
     }

@@ -2,33 +2,22 @@
 import { io, Socket } from "socket.io-client";
 let socket: Socket | null = null;
 export const getTokenFromCookie = (): string | null => {
-  console.log('🍪 All cookies:', document.cookie);
-  
   // Try multiple cookie name variations
   const accessTokenMatch = document.cookie.match(/(?:^|;\s*)accessToken=([^;]*)/);
   const tokenMatch = document.cookie.match(/(?:^|;\s*)token=([^;]*)/);
   
   const token = accessTokenMatch?.[1] || tokenMatch?.[1] || null;
   
-  console.log('🔍 Cookie parsing results:', {
-    accessTokenMatch: !!accessTokenMatch,
-    tokenMatch: !!tokenMatch,
-    foundToken: !!token,
-    tokenLength: token?.length || 0
-  });
-  
   return token;
 };
 export const connectSocket = () => { 
   // Return existing socket if connected
   if (socket?.connected) {
-    console.log('🔄 Returning existing connected socket:', socket.id);
     return socket;
   }
   
   // Don't create new socket if one exists (even if disconnected)
   if (socket) {
-    console.log('🔄 Socket exists but disconnected, attempting reconnection');
     if (!socket.connected) {
       socket.connect();
     }
@@ -36,11 +25,6 @@ export const connectSocket = () => {
   }
     
   const token = getTokenFromCookie();
-  console.log("🔌 INITIALIZING NEW SOCKET CONNECTION:", { 
-    hasToken: !!token, 
-    tokenLength: token?.length || 0,
-    serverUrl: "http://localhost:8000"
-  });
 
   socket = io("http://localhost:8000", {
     withCredentials: true, // Enable cookies
@@ -57,32 +41,23 @@ export const connectSocket = () => {
   });
 
   socket.on("connect", () => {
-    console.log("✅ Connected to Socket.IO:", {
-      socketId: socket?.id,
-      transport: socket?.io.engine.transport.name,
-      connected: socket?.connected
-    });
+    // Connection established
   });
 
-  socket.on("disconnect", (reason) => {
-    console.log("❌ Disconnected from Socket.IO:", {
-      reason,
-      socketId: socket?.id
-    });
+  socket.on("disconnect", () => {
+    // Socket disconnected
   });
 
-  socket.on("connect_error", (err) => {
-    console.error("❌ Socket connect error:", {
-      message: err.message
-    });
+  socket.on("connect_error", () => {
+    // Connection error
   });
 
-  socket.on("connection-confirmed", (data) => {
-    console.log("✅ Connection confirmed from server:", data);
+  socket.on("connection-confirmed", () => {
+    // Connection confirmed by server
   });
 
-  socket.on("error", (error) => {
-    console.error("❌ Socket error event:", error);
+  socket.on("error", () => {
+    // Socket error
   });
 
   return socket;
@@ -94,10 +69,9 @@ export const getSocket = (): Socket | null => {
   return socket;
 };
 
-// ✅ Clean up the socket connection
+// Clean up the socket connection
 export const disconnectSocket = () => {
   if (socket) {
-    console.log('🔌 Disconnecting socket:', socket.id);
     socket.removeAllListeners();
     socket.disconnect();
     socket = null;
