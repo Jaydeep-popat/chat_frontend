@@ -47,9 +47,12 @@ export interface ChatRoom {
   _id: string;
   name: string;
   description?: string;
-  members: string[];
-  admins: string[];
-  createdBy: string;
+  groupImage?: string;
+  participants: User[];
+  admins: User[];
+  createdBy: User;
+  isGroupChat: boolean;
+  lastMessage?: Message;
   createdAt: string;
   updatedAt: string;
 }
@@ -61,6 +64,21 @@ export interface ChatConversation {
   receiver: User;
   room?: ChatRoom;
   unreadCount: number;
+}
+
+export interface ChatUser {
+  id: string;
+  userId: string; // For DM this is user ID, for Group this is Room ID
+  name: string;
+  avatar: string;
+  description?: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  isOnline: boolean;
+  unreadCount: number;
+  isGroup: boolean;
+  admins?: string[];
+  participants?: string[];
 }
 
 export interface FormData {
@@ -117,9 +135,16 @@ export interface SocketEvents {
   onMessageRead?: (messageId: string, readerId: string) => void;
   onMessageDeleted?: (messageId: string) => void;
   onMessageEdited?: (updatedMessage: Message) => void;
-  onTypingStart?: (userId: string) => void;
-  onTypingStop?: (userId: string) => void;
+  onTypingStart?: (userId: string, roomId?: string) => void;
+  onTypingStop?: (userId: string, roomId?: string) => void;
   onConnectionConfirmed?: (data: { userId: string; status: string; message: string }) => void;
+  // Group events
+  onGroupChatCreated?: (room: ChatRoom) => void;
+  onAddedToGroup?: (room: ChatRoom) => void;
+  onParticipantAdded?: (data: { roomId: string; newUser: Partial<User> }) => void;
+  onParticipantRemoved?: (data: { roomId: string; removedUserId: string }) => void;
+  onGroupUpdated?: (room: ChatRoom) => void;
+  onParticipantLeft?: (data: { roomId: string; leftUserId: string }) => void;
 }
 
 export interface FileUploadResponse {

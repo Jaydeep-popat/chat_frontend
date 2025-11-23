@@ -8,6 +8,10 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const isConnectedRef = useRef(false);
+  const eventsRef = useRef(events);
+  
+  // Always keep the latest events
+  eventsRef.current = events;
 
   // Connect to socket when user ID is available (only once)
   useEffect(() => {
@@ -24,7 +28,7 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
     if (socketRef.current?.connected) {
       return;
     }
-    
+
     // Create or get existing socket
     if (!socketRef.current) {
       connectSocket();
@@ -36,7 +40,7 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
     }
 
     // Connection event handlers
-    const  handleConnect = () => {
+    const handleConnect = () => {
       setIsConnected(true);
       isConnectedRef.current = true;
     };
@@ -52,41 +56,41 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
     };
 
     const handleConnectionConfirmed = (data: { userId: string; status: string; message: string }) => {
-      events.onConnectionConfirmed?.(data);
+      eventsRef.current.onConnectionConfirmed?.(data);
     };
 
     // Message event handlers
     const handleReceiveMessage = (message: unknown) => {
-      events.onMessageReceived?.(message as never);
+      eventsRef.current.onMessageReceived?.(message as never);
     };
 
     const handleMessageRead = ({ messageId, reader }: { messageId: string; reader: string }) => {
-      events.onMessageRead?.(messageId, reader);
+      eventsRef.current.onMessageRead?.(messageId, reader);
     };
 
     const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
-      events.onMessageDeleted?.(messageId);
+      eventsRef.current.onMessageDeleted?.(messageId);
     };
 
     const handleMessageEdited = (updatedMessage: unknown) => {
-      events.onMessageEdited?.(updatedMessage as never);
+      eventsRef.current.onMessageEdited?.(updatedMessage as never);
     };
 
     // User status event handlers
     const handleUserOnline = ({ userId }: { userId: string }) => {
-      events.onUserOnline?.(userId);
+      eventsRef.current.onUserOnline?.(userId);
     };
 
     const handleUserOffline = ({ userId }: { userId: string }) => {
-      events.onUserOffline?.(userId);
+      eventsRef.current.onUserOffline?.(userId);
     };
 
     // Typing event handlers
-    const handleUserTyping = ({ userId, isTyping }: { userId: string; isTyping: boolean }) => {
+    const handleUserTyping = ({ userId, isTyping, roomId }: { userId: string; isTyping: boolean; roomId?: string }) => {
       if (isTyping) {
-        events.onTypingStart?.(userId);
+        eventsRef.current.onTypingStart?.(userId, roomId);
       } else {
-        events.onTypingStop?.(userId);
+        eventsRef.current.onTypingStop?.(userId, roomId);
       }
     };
 
@@ -104,7 +108,15 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
       socketRef.current!.on('user-online', handleUserOnline);
       socketRef.current!.on('user-offline', handleUserOffline);
       socketRef.current!.on('user-typing', handleUserTyping);
-      
+
+      // Group Events
+      socketRef.current!.on('group-chat-created', (room) => eventsRef.current.onGroupChatCreated?.(room));
+      socketRef.current!.on('added-to-group', (room) => eventsRef.current.onAddedToGroup?.(room));
+      socketRef.current!.on('participant-added', (data) => eventsRef.current.onParticipantAdded?.(data));
+      socketRef.current!.on('participant-removed', (data) => eventsRef.current.onParticipantRemoved?.(data));
+      socketRef.current!.on('group-updated', (room) => eventsRef.current.onGroupUpdated?.(room));
+      socketRef.current!.on('participant-left', (data) => eventsRef.current.onParticipantLeft?.(data));
+
       // IMPORTANT: Check if socket is already connected and sync state
       if (socketRef.current!.connected) {
         handleConnect();
@@ -127,12 +139,12 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
         socketRef.current!.off('user-offline', handleUserOffline);
         socketRef.current!.off('user-typing', handleUserTyping);
       }
-      
+
       disconnectSocket();
       setIsConnected(false);
       isConnectedRef.current = false;
     };
-  }, [currentUserId, events]); // Dependencies for useEffect
+  }, [currentUserId]); // Dependencies for useEffect - events removed to prevent infinite re-renders
 
   // Add a timer to continuously sync socket state (fallback for state mismatch)
   useEffect(() => {
@@ -158,7 +170,7 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
     socketRef.current.emit('join-conversation', { targetUserId });
   }, []);
 
-  const joinRoom = useCallback((roomId: string) => {
+  const joinGroup = useCallback((roomId: string) => {
     if (!socketRef.current || !isConnectedRef.current) {
       return;
     }
@@ -171,10 +183,10 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
       return;
     }
 
-    socketRef.current.emit('send-private-message', { 
-      targetUserId, 
-      content, 
-      messageType 
+    socketRef.current.emit('send-private-message', {
+      targetUserId,
+      content,
+      messageType
     });
   }, []);
 
@@ -205,7 +217,7 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
     socket: socketRef.current,
     isConnected,
     joinConversation,
-    joinRoom,
+    joinGroup,
     sendPrivateMessage,
     startTyping,
     stopTyping

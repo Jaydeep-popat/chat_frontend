@@ -19,10 +19,22 @@ function Login() {
   const router = useRouter()
   const { user, login, loading: authLoading } = useAuth()
 
-  // Redirect if user is already logged in
+  // Handle URL parameters and error messages
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const errorParam = urlParams.get('error')
+    
+    // Set appropriate error message based on URL parameter
+    if (errorParam === 'rate_limit') {
+      setError('Too many login attempts. Please try again in a few minutes.')
+    } else if (errorParam === 'connection') {
+      setError('Connection error. Please check your internet connection and try again.')
+    } else if (errorParam === 'token_expired') {
+      setError('Your session has expired. Please log in again.')
+    }
+
+    // Redirect if user is already logged in
     if (user) {
-      const urlParams = new URLSearchParams(window.location.search)
       const redirect = urlParams.get('redirect') || '/chat-page'
       router.replace(redirect)
     }

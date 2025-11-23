@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import api, { resetRefreshAttempts } from '../app/utils/api';
 
 interface User {
   _id: string;
@@ -42,9 +42,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get('/api/users/getCurrentUser', {
-        withCredentials: true,
-      });
+      const response = await api.get('/api/users/getCurrentUser');
       
       if (response.data.success) {
         setUser(response.data.data);
@@ -61,12 +59,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: { username?: string; email?: string; password: string }) => {
     setLoading(true);
     try {
-      const response = await axios.post('/api/users/login', credentials, {
-        withCredentials: true,
-      });
+      const response = await api.post('/api/users/login', credentials);
       
       if (response.data.success) {
         setUser(response.data.data.user);
+        resetRefreshAttempts(); // Reset refresh attempts on successful login
       }
     } catch (error) {
       throw error;
@@ -77,9 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post('/api/users/logout', {}, {
-        withCredentials: true,
-      });
+      await api.post('/api/users/logout', {});
       setUser(null);
     } catch {
       // Logout error occurred

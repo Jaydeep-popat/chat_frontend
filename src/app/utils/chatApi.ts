@@ -1,9 +1,11 @@
 // Chat API utility functions for messaging
-import axios from 'axios';
-import { 
-  Message as ApiMessage, 
+import api from './api';
+import {
+  Message as ApiMessage,
   ChatConversation,
-  MessagesResponse 
+  MessagesResponse,
+  ChatRoom,
+  ChatUser
 } from '@/app/types';
 
 const API_BASE = '/api/messages';
@@ -22,24 +24,6 @@ export interface Message {
   createdAt: string;
 }
 
-export interface ChatUser {
-  id: string;
-  userId: string;
-  name: string;
-  avatar: string;
-  lastMessage: string;
-  lastMessageTime: string;
-  isOnline: boolean;
-  unreadCount: number;
-}
-
-export interface SendMessageRequest {
-  receiver: string;
-  content?: string;
-  messageType: 'text' | 'image' | 'video' | 'file';
-  file?: File;
-}
-
 export interface GetMessagesRequest {
   receiver?: string;
   room?: string;
@@ -49,15 +33,13 @@ export interface GetMessagesRequest {
 }
 
 // Send a text message
-export const sendTextMessage = async (receiver: string, content: string): Promise<ApiMessage> => {
+export const sendTextMessage = async (targetId: string, content: string, isGroup: boolean = false): Promise<ApiMessage> => {
   try {
-    const response = await axios.post(`${API_BASE}/send-message`, {
-      receiver,
-      content,
-      messageType: 'text'
-    }, {
-      withCredentials: true
-    });
+    const payload = isGroup
+      ? { room: targetId, content, messageType: 'text' }
+      : { receiver: targetId, content, messageType: 'text' };
+
+    const response = await api.post(`${API_BASE}/send-message`, payload);
     return response.data.data;
   } catch (error) {
     throw error;
@@ -66,15 +48,20 @@ export const sendTextMessage = async (receiver: string, content: string): Promis
 
 // Send a file message (image, video, or document)
 export const sendFileMessage = async (
-  receiver: string, 
-  file: File, 
-  content?: string
+  targetId: string,
+  file: File,
+  content?: string,
+  isGroup: boolean = false
 ): Promise<ApiMessage> => {
   try {
     const formData = new FormData();
-    formData.append('receiver', receiver);
+    if (isGroup) {
+      formData.append('room', targetId);
+    } else {
+      formData.append('receiver', targetId);
+    }
     formData.append('file', file);
-    
+
     // Determine message type based on file type
     let messageType: 'image' | 'video' | 'file' = 'file';
     if (file.type.startsWith('image/')) {
@@ -82,15 +69,14 @@ export const sendFileMessage = async (
     } else if (file.type.startsWith('video/')) {
       messageType = 'video';
     }
-    
+
     formData.append('messageType', messageType);
-    
+
     if (content) {
       formData.append('content', content);
     }
 
-    const response = await axios.post(`${API_BASE}/send-message`, formData, {
-      withCredentials: true,
+    const response = await api.post(`${API_BASE}/send-message`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -105,16 +91,14 @@ export const sendFileMessage = async (
 export const getMessages = async (params: GetMessagesRequest): Promise<MessagesResponse> => {
   try {
     const queryParams = new URLSearchParams();
-    
+
     if (params.receiver) queryParams.append('receiver', params.receiver);
     if (params.room) queryParams.append('room', params.room);
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.limit) queryParams.append('limit', params.limit.toString());
     if (params.search) queryParams.append('search', params.search);
 
-    const response = await axios.get(`${API_BASE}/get-messages?${queryParams}`, {
-      withCredentials: true
-    });
+    const response = await api.get(`${API_BASE}/get-messages?${queryParams}`);
     return response.data.data;
   } catch (error) {
     throw error;
@@ -124,9 +108,7 @@ export const getMessages = async (params: GetMessagesRequest): Promise<MessagesR
 // Get chat list
 export const getChatList = async (): Promise<ChatConversation[]> => {
   try {
-    const response = await axios.get(`${API_BASE}/get-chat-list`, {
-      withCredentials: true
-    });
+    const response = await api.get(`${API_BASE}/get-chat-list`);
     return response.data.data;
   } catch (error) {
     throw error;
@@ -136,9 +118,7 @@ export const getChatList = async (): Promise<ChatConversation[]> => {
 // Mark message as read
 export const markMessageAsRead = async (messageId: string): Promise<void> => {
   try {
-    await axios.patch(`${API_BASE}/mark-as-read/${messageId}`, {}, {
-      withCredentials: true
-    });
+    await api.patch(`${API_BASE}/mark-as-read/${messageId}`, {});
   } catch (error) {
     throw error;
   }
@@ -147,9 +127,7 @@ export const markMessageAsRead = async (messageId: string): Promise<void> => {
 // Delete a message
 export const deleteMessage = async (messageId: string): Promise<void> => {
   try {
-    await axios.delete(`${API_BASE}/delete-message/${messageId}`, {
-      withCredentials: true
-    });
+    await api.delete(`${API_BASE}/delete-message/${messageId}`);
   } catch (error) {
     throw error;
   }
@@ -158,10 +136,8 @@ export const deleteMessage = async (messageId: string): Promise<void> => {
 // Edit a message
 export const editMessage = async (messageId: string, content: string): Promise<ApiMessage> => {
   try {
-    const response = await axios.put(`${API_BASE}/edit-message/${messageId}`, {
+    const response = await api.put(`${API_BASE}/edit-message/${messageId}`, {
       content
-    }, {
-      withCredentials: true
     });
     return response.data.data;
   } catch (error) {
@@ -172,10 +148,138 @@ export const editMessage = async (messageId: string, content: string): Promise<A
 // Get unread message count
 export const getUnreadCount = async (): Promise<number> => {
   try {
-    const response = await axios.get(`${API_BASE}/getUnreadCount`, {
-      withCredentials: true
-    });
+    const response = await api.get(`${API_BASE}/getUnreadCount`);
     return response.data.data.unreadCount;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// --- Group Chat APIs ---
+
+export const createGroupChat = async (
+  name: string,
+  participants: string[], 
+  description?: string,
+  groupImage?: File
+): Promise<ChatRoom> => {
+  try {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('participants', JSON.stringify(participants));
+    
+    if (description) {
+      formData.append('description', description);
+    }
+    
+    if (groupImage) {
+      formData.append('groupImage', groupImage);
+    }
+
+    const response = await api.post('/api/chat-rooms/create-group', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const addParticipant = async (roomId: string, userId: string): Promise<ChatRoom> => {
+  try {
+    const response = await api.post(`/api/chat-rooms/${roomId}/add-participant`, {
+      userId
+    });
+    return response.data.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const removeParticipant = async (roomId: string, userId: string): Promise<void> => {
+  try {
+    await api.post(`/api/chat-rooms/${roomId}/remove-participant`, {
+      userId
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const leaveGroupChat = async (roomId: string): Promise<void> => {
+  try {
+    await api.post(`/api/chat-rooms/${roomId}/leave`, {});
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateGroupChat = async (
+  roomId: string, 
+  name?: string, 
+  description?: string,
+  groupImage?: File
+): Promise<ChatRoom> => {
+  try {
+    const formData = new FormData();
+    
+    if (name) {
+      formData.append('name', name);
+    }
+    
+    if (description !== undefined) {
+      formData.append('description', description);
+    }
+    
+    if (groupImage) {
+      formData.append('groupImage', groupImage);
+    }
+
+    const response = await api.put(`/api/chat-rooms/${roomId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Update group image specifically
+export const updateGroupImage = async (roomId: string, groupImage: File): Promise<ChatRoom> => {
+  try {
+    const formData = new FormData();
+    formData.append('groupImage', groupImage);
+
+    const response = await api.put(`/api/chat-rooms/${roomId}/update-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get chat room details
+export const getChatRoomDetails = async (roomId: string): Promise<ChatRoom> => {
+  try {
+    const response = await api.get(`/api/chat-rooms/${roomId}`);
+    return response.data.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get user's chat rooms
+export const getUserChatRooms = async (page: number = 1, limit: number = 20): Promise<{chatRooms: ChatRoom[], pagination: { totalRooms: number; totalPages: number; currentPage: number; limit: number }}> => {
+  try {
+    const response = await api.get(`/api/chat-rooms/user-rooms?page=${page}&limit=${limit}`);
+    return response.data.data;
   } catch (error) {
     throw error;
   }
@@ -185,7 +289,7 @@ export const getUnreadCount = async (): Promise<number> => {
 export const formatMessage = (msg: ApiMessage, currentUserId: string): Message => {
   const senderId = typeof msg.sender === 'string' ? msg.sender : msg.sender._id;
   const readByArray = Array.isArray(msg.readBy) ? msg.readBy : [];
-  
+
   const isReadByUser = readByArray.some((id: string) => {
     return id === currentUserId;
   });
@@ -209,8 +313,32 @@ export const formatMessage = (msg: ApiMessage, currentUserId: string): Message =
 };
 
 export const formatChatUser = (chat: ChatConversation, currentUserId: string): ChatUser | null => {
+  // Handle Group Chat
+  if (chat.room) {
+    return {
+      id: chat.room._id,
+      userId: chat.room._id, // Use room ID as userId for consistency in selection logic
+      name: chat.room.name,
+      avatar: chat.room.groupImage || '', // Use group image or empty
+      description: chat.room.description,
+      lastMessage: chat.lastMessage?.content || '',
+      lastMessageTime: chat.lastMessage?.createdAt
+        ? new Date(chat.lastMessage.createdAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+        : '',
+      isOnline: false, // Groups don't have online status
+      unreadCount: chat.unreadCount || 0,
+      isGroup: true,
+      admins: chat.room.admins?.map(u => u._id) || [],
+      participants: chat.room.participants?.map(u => u._id) || []
+    };
+  }
+
+  // Handle DM
   if (!chat.sender || !chat.receiver) return null;
-  
+
   const otherUser = chat.sender._id === currentUserId ? chat.receiver : chat.sender;
   if (!otherUser) return null;
 
@@ -222,11 +350,12 @@ export const formatChatUser = (chat: ChatConversation, currentUserId: string): C
     lastMessage: chat.lastMessage?.content || '',
     lastMessageTime: chat.lastMessage?.createdAt
       ? new Date(chat.lastMessage.createdAt).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
+        hour: '2-digit',
+        minute: '2-digit'
+      })
       : '',
     isOnline: otherUser.isOnline || false,
-    unreadCount: chat.unreadCount || 0
+    unreadCount: chat.unreadCount || 0,
+    isGroup: false
   };
 };

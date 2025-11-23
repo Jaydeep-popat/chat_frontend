@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import api from "../../utils/api";
 import axios from "axios";
 import { Lock, Eye, EyeOff, Shield, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 
@@ -62,11 +63,9 @@ const ChangePassword = () => {
     }
 
     try {
-      await axios.post('/api/users/change-password', {
+      await api.post('/api/users/change-password', {
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword
-      }, {
-        withCredentials: true,
       });
 
       setSuccess(true);

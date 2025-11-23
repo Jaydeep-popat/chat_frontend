@@ -1,7 +1,8 @@
 "use client"
 import { useState } from "react"
 import type React from "react"
-import axios, { isAxiosError, type AxiosError } from "axios"
+import api from "../../utils/api"
+import { isAxiosError, type AxiosError } from "axios"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -64,8 +65,7 @@ function Signup() {
     if (profilePic) formData.append("profilePic", profilePic)
 
     try {
-      await axios.post("/api/users/register", formData, {
-        withCredentials: true,
+      await api.post("/api/users/register", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
       
