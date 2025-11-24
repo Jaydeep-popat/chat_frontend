@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 // Create axios instance
 const api = axios.create({
-  baseURL: '', // Use relative path to leverage Next.js rewrites
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://chat-backend-5wt4.onrender.com',
   withCredentials: true,
   timeout: 10000,
   headers: {
