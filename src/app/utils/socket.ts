@@ -8,26 +8,19 @@ export const getTokenFromCookie = (): string | null => {
 
   const token = accessTokenMatch?.[1] || tokenMatch?.[1] || null;
 
-  console.log('🍪 Socket: Cookie check:', {
-    fullCookie: document.cookie,
-    accessTokenFound: !!accessTokenMatch,
-    tokenFound: !!tokenMatch,
-    finalToken: token ? `${token.substring(0, 20)}...` : 'none'
-  });
+
 
   return token;
 };
 export const connectSocket = () => {
   // Return existing socket if connected
   if (socket?.connected) {
-    console.log('🔌 Socket already connected, returning existing socket');
     return socket;
   }
 
   // Don't create new socket if one exists (even if disconnected)
   if (socket) {
     if (!socket.connected) {
-      console.log('🔄 Reconnecting existing socket');
       socket.connect();
     }
     return socket;
@@ -36,11 +29,7 @@ export const connectSocket = () => {
   const token = getTokenFromCookie();
   const socketURL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://chat-backend-5wt4.onrender.com';
 
-  console.log('🚀 Creating new socket connection:', {
-    url: socketURL,
-    hasToken: !!token,
-    token: token ? `${token.substring(0, 20)}...` : 'none'
-  });
+
 
   socket = io(socketURL, {
     withCredentials: true, // Enable cookies
@@ -57,23 +46,23 @@ export const connectSocket = () => {
   });
 
   socket.on("connect", () => {
-    console.log('✅ Socket connected successfully:', socket?.id);
+    console.log('Socket connected:', socket?.id);
   });
 
   socket.on("disconnect", (reason) => {
-    console.log('❌ Socket disconnected:', reason);
+    console.log('Socket disconnected:', reason);
   });
 
   socket.on("connect_error", (error) => {
-    console.log('❌ Socket connection error:', error);
+    console.error('Socket connection error:', error);
   });
 
-  socket.on("connection-confirmed", (data) => {
-    console.log('✅ Socket connection confirmed by server:', data);
+  socket.on("connection-confirmed", () => {
+    console.log('Socket connection confirmed');
   });
 
   socket.on("error", (error) => {
-    console.log('❌ Socket error:', error);
+    console.error('Socket error:', error);
   });
 
   return socket;

@@ -30,20 +30,11 @@ export const resetRefreshAttempts = () => {
 
 // Debug function to test API connection
 export const testAPIConnection = async () => {
-  console.log('🧪 Testing API Connection...');
-  console.log('🔧 Environment Variables:', {
-    NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL
-  });
-
   try {
-    // Test health endpoint
     const response = await api.get('/health');
-    console.log('✅ Health check successful:', response.data);
     return { success: true, data: response.data };
   } catch (error) {
-    console.log('❌ Health check failed:', error);
+    console.error('Health check failed:', error);
     return { success: false, error };
   }
 }
@@ -63,18 +54,10 @@ const processQueue = (error: unknown, token: string | null = null) => {
 // Request interceptor
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Log all outgoing requests
-    console.log('🚀 API Request:', {
-      method: config.method?.toUpperCase(),
-      url: `${config.baseURL}${config.url}`,
-      data: config.data,
-      headers: config.headers,
-      withCredentials: config.withCredentials
-    });
     return config
   },
   (error) => {
-    console.log('❌ Request Interceptor Error:', error);
+    console.error('Request error:', error);
     return Promise.reject(error)
   }
 )
@@ -82,28 +65,10 @@ api.interceptors.request.use(
 // Response interceptor for automatic token refresh
 api.interceptors.response.use(
   (response) => {
-    // Log successful responses
-    console.log('✅ API Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.config.url,
-      data: response.data
-    });
     return response
   },
   async (error: AxiosError) => {
-    // Log all API errors with detailed information
-    console.log('❌ API Error:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      url: error.config?.url,
-      method: error.config?.method,
-      baseURL: error.config?.baseURL,
-      message: error.message,
-      code: error.code,
-      responseData: error.response?.data,
-      requestHeaders: error.config?.headers
-    });
+
 
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
@@ -134,7 +99,7 @@ api.interceptors.response.use(
       // Check cooldown period to avoid rapid successive calls
       const now = Date.now()
       if (now - lastRefreshAttempt < REFRESH_COOLDOWN_MS) {
-        console.log('🕒 Refresh attempt too soon, waiting...')
+
         return Promise.reject(error)
       }
 
@@ -145,7 +110,7 @@ api.interceptors.response.use(
 
       try {
         // Try to refresh the token
-        console.log(`🔄 Attempting to refresh access token... (attempt ${refreshAttempts}/${MAX_REFRESH_ATTEMPTS})`)
+
 
         const refreshBaseURL = ''; // Use relative path for refresh token as well
         const response = await axios.post('/api/users/refresh-token', {}, {
@@ -159,7 +124,7 @@ api.interceptors.response.use(
         })
 
         if (response.status === 200) {
-          console.log('✅ Token refreshed successfully')
+
           refreshAttempts = 0 // Reset attempts on success
           processQueue(null, response.data.data.accessToken)
 
@@ -167,7 +132,7 @@ api.interceptors.response.use(
           return api(originalRequest)
         }
       } catch (refreshError) {
-        console.log(`❌ Token refresh failed (attempt ${refreshAttempts}/${MAX_REFRESH_ATTEMPTS}):`, refreshError)
+        console.error('Token refresh failed:', refreshError)
         processQueue(refreshError, null)
 
         // Handle different error scenarios
@@ -178,7 +143,7 @@ api.interceptors.response.use(
 
         // If rate limited, unauthorized, connection error, or max attempts reached
         if (refreshAttempts >= MAX_REFRESH_ATTEMPTS || isRateLimited || isUnauthorized || isConnectionError) {
-          console.log(`🚫 Redirecting to login: attempts=${refreshAttempts}, rateLimited=${isRateLimited}, unauthorized=${isUnauthorized}, connectionError=${isConnectionError}`)
+
           refreshAttempts = 0
           if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
             // Clear any stored user data
