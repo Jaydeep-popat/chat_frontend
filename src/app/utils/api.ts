@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 // Create axios instance
 const api = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:8000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   withCredentials: true,
   timeout: 10000,
   headers: {
@@ -100,9 +100,10 @@ api.interceptors.response.use(
         // Try to refresh the token
         console.log(`🔄 Attempting to refresh access token... (attempt ${refreshAttempts}/${MAX_REFRESH_ATTEMPTS})`)
         
+        const refreshBaseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
         const response = await axios.post('/api/users/refresh-token', {}, {
           withCredentials: true,
-          baseURL: process.env.NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_API_URL : 'http://localhost:8000',
+          baseURL: refreshBaseURL,
           timeout: 10000, // 10 second timeout for refresh requests
           headers: {
             'Content-Type': 'application/json',

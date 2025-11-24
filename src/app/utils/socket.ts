@@ -25,8 +25,9 @@ export const connectSocket = () => {
   }
     
   const token = getTokenFromCookie();
+  const socketURL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8000';
 
-  socket = io("http://localhost:8000", {
+  socket = io(socketURL, {
     withCredentials: true, // Enable cookies
     transports: ["websocket", "polling"], // Allow polling fallback
     forceNew: false, // Don't force new connection

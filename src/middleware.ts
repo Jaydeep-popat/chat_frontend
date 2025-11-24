@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const PROTECTED_ROUTES = ["/chat-page", "/profile", "/updateAccount", "/change-password"];
-const API_URL = "http://localhost:8000/api/users/getCurrentUser";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = `${API_BASE_URL}/api/users/getCurrentUser`;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
