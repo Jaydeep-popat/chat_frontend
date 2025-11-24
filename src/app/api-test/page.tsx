@@ -2,13 +2,19 @@
 
 import { useState } from 'react';
 import { testAPIConnection } from '@/app/utils/api';
-import { connectSocket, getSocket } from '@/app/utils/socket';
+import { connectSocket } from '@/app/utils/socket';
+
+interface TestResult {
+  test: string;
+  result: unknown;
+  timestamp: string;
+}
 
 export default function APITestPage() {
-  const [testResults, setTestResults] = useState<any[]>([]);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const addResult = (test: string, result: any) => {
+  const addResult = (test: string, result: unknown) => {
     setTestResults(prev => [...prev, { test, result, timestamp: new Date().toISOString() }]);
   };
 
@@ -109,7 +115,7 @@ export default function APITestPage() {
 
           {testResults.length === 0 && !loading && (
             <div className="text-center text-gray-500 py-8">
-              Click "Run All Tests" to check API connectivity
+              Click &quot;Run All Tests&quot; to check API connectivity
             </div>
           )}
         </div>
@@ -130,7 +136,7 @@ export default function APITestPage() {
           <h2 className="text-lg font-semibold text-blue-800 mb-3">Expected Results:</h2>
           <ul className="list-disc list-inside space-y-2 text-blue-700">
             <li><strong>Environment Variables:</strong> Should show your Render backend URL</li>
-            <li><strong>API Health Check:</strong> Should return {"{ status: 'OK', ... }"}</li>
+            <li><strong>API Health Check:</strong> Should return {'{status: "OK", ...}'}</li>
             <li><strong>Socket Connection:</strong> Should show connected: true</li>
             <li><strong>CORS Test:</strong> Should return same as health check without errors</li>
           </ul>

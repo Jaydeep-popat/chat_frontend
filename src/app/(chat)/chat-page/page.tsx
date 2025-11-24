@@ -76,24 +76,10 @@ const ChatPage = () => {
 
   // Authentication check
   useEffect(() => {
-    console.log('🔒 Chat Page: Auth check:', { user: !!user, loading: authLoading });
-    
     if (!authLoading && !user) {
-      console.log('🔒 Chat Page: No user found, redirecting to login');
       router.push('/login?redirect=/chat-page');
-      return;
     }
   }, [user, authLoading, router]);
-
-  // Show loading while checking auth
-  if (authLoading) {
-    return <FullPageLoading text="Checking authentication..." />;
-  }
-
-  // Show loading if no user (while redirecting)
-  if (!user) {
-    return <FullPageLoading text="Redirecting to login..." />;
-  }
 
   // Fetch current user and chat list
   const fetchUserAndChats = useCallback(async () => {
@@ -889,6 +875,16 @@ const ChatPage = () => {
     return displayName.includes(searchTerm) || username.includes(searchTerm);
   });
 
+  // Show loading while checking auth
+  if (authLoading) {
+    return <FullPageLoading text="Checking authentication..." />;
+  }
+
+  // Show loading if no user (while redirecting)
+  if (!user) {
+    return <FullPageLoading text="Redirecting to login..." />;
+  }
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -918,7 +914,7 @@ const ChatPage = () => {
           : 'w-80 bg-white/80 backdrop-blur-xl border-r border-gray-200/50 shadow-xl'
         } flex flex-col
       `}>
-        <div className="p-4 border-b border-gradient-to-r from-blue-200/30 to-purple-200/30 bg-gradient-to-r from-blue-50/50 to-purple-50/50">
+        <div className="p-4 border-b border-purple-200/30 bg-gradient-to-r from-blue-50/50 to-purple-50/50">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               {isMobile && (
