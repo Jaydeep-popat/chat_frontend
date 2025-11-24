@@ -16,12 +16,12 @@ const nextConfig = {
     ],
   },
   async rewrites() {
-      return[
-        {
-          source:"/api/:path*",
-          destination:"http://localhost:8000/api/:path*"
-        }
-      ]
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL || "https://chat-backend-5wt4.onrender.com"}/api/:path*`
+      }
+    ]
   },
 };
 

@@ -5,27 +5,42 @@ export const getTokenFromCookie = (): string | null => {
   // Try multiple cookie name variations
   const accessTokenMatch = document.cookie.match(/(?:^|;\s*)accessToken=([^;]*)/);
   const tokenMatch = document.cookie.match(/(?:^|;\s*)token=([^;]*)/);
-  
+
   const token = accessTokenMatch?.[1] || tokenMatch?.[1] || null;
-  
+
+  console.log('🍪 Socket: Cookie check:', {
+    fullCookie: document.cookie,
+    accessTokenFound: !!accessTokenMatch,
+    tokenFound: !!tokenMatch,
+    finalToken: token ? `${token.substring(0, 20)}...` : 'none'
+  });
+
   return token;
 };
-export const connectSocket = () => { 
+export const connectSocket = () => {
   // Return existing socket if connected
   if (socket?.connected) {
+    console.log('🔌 Socket already connected, returning existing socket');
     return socket;
   }
-  
+
   // Don't create new socket if one exists (even if disconnected)
   if (socket) {
     if (!socket.connected) {
+      console.log('🔄 Reconnecting existing socket');
       socket.connect();
     }
     return socket;
   }
-    
+
   const token = getTokenFromCookie();
-  const socketURL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8000';
+  const socketURL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://chat-backend-5wt4.onrender.com';
+
+  console.log('🚀 Creating new socket connection:', {
+    url: socketURL,
+    hasToken: !!token,
+    token: token ? `${token.substring(0, 20)}...` : 'none'
+  });
 
   socket = io(socketURL, {
     withCredentials: true, // Enable cookies
@@ -42,23 +57,23 @@ export const connectSocket = () => {
   });
 
   socket.on("connect", () => {
-    // Connection established
+    console.log('✅ Socket connected successfully:', socket?.id);
   });
 
-  socket.on("disconnect", () => {
-    // Socket disconnected
+  socket.on("disconnect", (reason) => {
+    console.log('❌ Socket disconnected:', reason);
   });
 
-  socket.on("connect_error", () => {
-    // Connection error
+  socket.on("connect_error", (error) => {
+    console.log('❌ Socket connection error:', error);
   });
 
-  socket.on("connection-confirmed", () => {
-    // Connection confirmed by server
+  socket.on("connection-confirmed", (data) => {
+    console.log('✅ Socket connection confirmed by server:', data);
   });
 
-  socket.on("error", () => {
-    // Socket error
+  socket.on("error", (error) => {
+    console.log('❌ Socket error:', error);
   });
 
   return socket;

@@ -23,6 +23,14 @@ function Login() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const errorParam = urlParams.get('error')
+    const redirect = urlParams.get('redirect') || '/chat-page'
+    
+    console.log('🔄 Login Page: URL params check:', { 
+      errorParam, 
+      redirect, 
+      hasUser: !!user,
+      userId: user?._id 
+    });
     
     // Set appropriate error message based on URL parameter
     if (errorParam === 'rate_limit') {
@@ -35,7 +43,7 @@ function Login() {
 
     // Redirect if user is already logged in
     if (user) {
-      const redirect = urlParams.get('redirect') || '/chat-page'
+      console.log('✅ Login Page: User found, redirecting to:', redirect);
       router.replace(redirect)
     }
   }, [user, router])
@@ -71,12 +79,31 @@ function Login() {
       ? { email: data.usernameOrEmail, password: data.password }
       : { username: data.usernameOrEmail, password: data.password }
     
+    console.log('🔐 Login Page: Attempting login with:', loginData);
+    
     try {
       await login(loginData)
-      // Login successful
+      console.log('✅ Login Page: Login function completed successfully');
       
-      // Redirect will be handled by useEffect when user state changes
+      // Force redirect after successful login
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirect = urlParams.get('redirect') || '/chat-page'
+      console.log('🔄 Login Page: Forcing redirect to:', redirect);
+      
+      // Check cookies after login
+      console.log('🍪 Login Page: Checking cookies after login:', {
+        fullCookie: document.cookie,
+        cookies: document.cookie.split(';').map(c => c.trim())
+      });
+
+      // Small delay to ensure user state is updated
+      setTimeout(() => {
+        console.log('🍪 Login Page: Final cookie check before redirect:', document.cookie);
+        router.push(redirect);
+      }, 100);
+      
     } catch (error: unknown) {
+      console.log('❌ Login Page: Login failed:', error);
       const apiError = error as { response?: { data?: { message?: string } } };
       setError(apiError.response?.data?.message || "Login failed. Please try again.")
     } finally {

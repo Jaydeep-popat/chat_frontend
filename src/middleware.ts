@@ -22,13 +22,13 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      // Use fetch with correct method
       const res = await fetch(API_URL, {
         method: "GET",
         headers: {
-          'Cookie': `accessToken=${token}`,
+          'Cookie': request.headers.get('cookie') || `accessToken=${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       const data = await res.json();
@@ -42,7 +42,6 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     } catch {
-      // Token verification failed
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirect", pathname);
@@ -54,5 +53,19 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    // Explicitly include protected routes
+    '/chat-page/:path*',
+    '/profile/:path*',
+    '/updateAccount/:path*',
+    '/change-password/:path*'
+  ],
 };

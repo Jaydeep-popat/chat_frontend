@@ -3,6 +3,8 @@ import type React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useRef, useCallback } from "react"
+import { useAuth } from "@/context/AuthContext"
+import { FullPageLoading } from "@/components/LoadingSpinner"
 import api from "../../utils/api"
 import { Button } from "@/app/components/button"
 import { ScrollArea } from "@/app/components/scroll-area"
@@ -35,6 +37,7 @@ type SocketMessagePayload = ApiServerMessage
 
 const ChatPage = () => {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   
   // State management
   const [users, setUsers] = useState<ChatUser[]>([])
@@ -70,6 +73,27 @@ const ChatPage = () => {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Authentication check
+  useEffect(() => {
+    console.log('🔒 Chat Page: Auth check:', { user: !!user, loading: authLoading });
+    
+    if (!authLoading && !user) {
+      console.log('🔒 Chat Page: No user found, redirecting to login');
+      router.push('/login?redirect=/chat-page');
+      return;
+    }
+  }, [user, authLoading, router]);
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return <FullPageLoading text="Checking authentication..." />;
+  }
+
+  // Show loading if no user (while redirecting)
+  if (!user) {
+    return <FullPageLoading text="Redirecting to login..." />;
+  }
 
   // Fetch current user and chat list
   const fetchUserAndChats = useCallback(async () => {
