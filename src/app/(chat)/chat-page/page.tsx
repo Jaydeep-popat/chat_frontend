@@ -57,7 +57,7 @@ const ChatPage = () => {
   const [sendingMessage, setSendingMessage] = useState(false)
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set())
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const [windowVisible, setWindowVisible] = useState(true)
   
   // Pagination state
@@ -73,6 +73,18 @@ const ChatPage = () => {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Authentication check
   useEffect(() => {
@@ -913,7 +925,7 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative">
+    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
       {/* Mobile Overlay */}
       {isMobile && isMobileMenuOpen && (
         <div
@@ -925,10 +937,10 @@ const ChatPage = () => {
       {/* Sidebar */}
       <div className={`
         ${isMobile
-          ? `fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-white/90 backdrop-blur-xl transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          ? `fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-white backdrop-blur-xl transform transition-transform duration-300 ease-in-out shadow-2xl ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
           }`
           : 'w-80 bg-white/80 backdrop-blur-xl border-r border-gray-200/50 shadow-xl'
-        } flex flex-col
+        } flex flex-col ${isMobile && selectedUser ? 'md:flex' : 'flex'}
       `}>
         <div className="p-4 border-b border-purple-200/30 bg-gradient-to-r from-blue-50/50 to-purple-50/50">
           <div className="flex items-center justify-between mb-4">
@@ -1154,27 +1166,27 @@ const ChatPage = () => {
         <>
           <div className="flex-1 flex flex-col min-w-0 bg-white/70 backdrop-blur-xl shadow-2xl">
             {/* Chat Header */}
-            <div className="flex items-center justify-between p-4 border-b border-purple-200/50 bg-gradient-to-r from-blue-50/30 to-purple-50/30">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between p-3 md:p-4 border-b border-purple-200/50 bg-gradient-to-r from-blue-50/30 to-purple-50/30">
+              <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                 {isMobile && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsMobileMenuOpen(true)}
-                    className="md:hidden mr-2"
+                    className="md:hidden p-2 hover:bg-white/50"
                   >
-                    <Menu className="h-5 w-5" />
+                    <Menu className="h-4 w-4" />
                   </Button>
                 )}
                 <div 
-                  className={selectedUser.isGroup ? "cursor-pointer" : ""}
+                  className={selectedUser.isGroup ? "cursor-pointer flex-shrink-0" : "flex-shrink-0"}
                   onClick={() => {
                     if (selectedUser.isGroup) {
                       router.push(`/group-details/${selectedUser.userId}`)
                     }
                   }}
                 >
-                  <Avatar className="h-10 w-10">
+                  <Avatar className="h-9 w-9 md:h-10 md:w-10">
                     <AvatarImage src={selectedUser.avatar || "/placeholder.svg"} alt={selectedUser.name} />
                     <AvatarFallback>
                       {selectedUser.name
@@ -1184,8 +1196,8 @@ const ChatPage = () => {
                     </AvatarFallback>
                   </Avatar>
                 </div>
-                <div>
-                  <h2 className="font-semibold text-gray-900">{selectedUser.name}</h2>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-semibold text-gray-900 text-sm md:text-base truncate">{selectedUser.name}</h2>
                   {selectedUser.isGroup ? (
                     <p className="text-xs text-gray-500">
                       {selectedUser.participants?.length || 0} participants
@@ -1335,8 +1347,8 @@ const ChatPage = () => {
             </ScrollArea>
 
             {/* Message Input */}
-            <div className="bg-gradient-to-r from-blue-50/30 to-purple-50/30 backdrop-blur-sm border-t border-purple-200/50 p-3 md:p-4">
-              <form onSubmit={handleSendMessage} className="flex gap-2 items-center">
+            <div className="bg-gradient-to-r from-blue-50/30 to-purple-50/30 backdrop-blur-sm border-t border-purple-200/50 p-2 md:p-4 safe-area-inset-bottom">
+              <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
                 {selectedFilePreview && (
                   <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-purple-200/50">
                     {selectedFile?.type.startsWith("image/") ? (
@@ -1350,42 +1362,46 @@ const ChatPage = () => {
                     <button type="button" className="text-xs text-red-500 hover:text-red-700 bg-red-100 hover:bg-red-200 px-2 py-1 rounded-full transition-colors" onClick={() => { setSelectedFile(null); setSelectedFilePreview(null); }}>✕</button>
                   </div>
                 )}
-                <Input
-                  placeholder={
-                    selectedUser
-                      ? `Message ${selectedUser.name}...`
-                      : "Type a message..."
-                  }
-                  value={newMessage}
-                  onChange={(e) => {
-                    setNewMessage(e.target.value);
-                    if (e.target.value.trim()) {
-                      handleTypingStart();
-                    } else {
-                      handleTypingStop();
+                <div className="flex-1">
+                  <Input
+                    placeholder={
+                      selectedUser
+                        ? `Message ${selectedUser.name}...`
+                        : "Type a message..."
                     }
-                  }}
-                  onBlur={handleTypingStop}
-                  className="flex-1 bg-white/80 backdrop-blur-sm border-purple-200 focus:border-purple-400 focus:ring-purple-300/30 rounded-2xl px-4 py-3"
-                />
+                    value={newMessage}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      if (e.target.value.trim()) {
+                        handleTypingStart();
+                      } else {
+                        handleTypingStop();
+                      }
+                    }}
+                    onBlur={handleTypingStop}
+                    className="w-full bg-white/80 backdrop-blur-sm border-purple-200 focus:border-purple-400 focus:ring-purple-300/30 rounded-2xl px-3 md:px-4 py-2 md:py-3 text-sm md:text-base min-h-[2.5rem] md:min-h-[3rem]"
+                  />
+                </div>
                 <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileChange} />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handlePickFile}
-                  title="Attach file"
-                  className="p-3 rounded-2xl border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 transform hover:scale-105"
-                >
-                  <Paperclip className="h-4 w-4 text-purple-600" />
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={(!newMessage.trim() && !selectedFile) || sendingMessage}
-                  title={!isConnected ? "Send message (will be delivered when online)" : "Send message"}
-                  className="p-3 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg transform transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Send className={`h-4 w-4 ${sendingMessage ? 'animate-pulse' : ''}`} />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePickFile}
+                    title="Attach file"
+                    className="p-2 md:p-3 rounded-2xl border-purple-200 hover:bg-purple-50 hover:border-purple-300 transition-all duration-200 transform hover:scale-105 min-h-[2.5rem] min-w-[2.5rem] md:min-h-[3rem] md:min-w-[3rem]"
+                  >
+                    <Paperclip className="h-4 w-4 text-purple-600" />
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={(!newMessage.trim() && !selectedFile) || sendingMessage}
+                    title={!isConnected ? "Send message (will be delivered when online)" : "Send message"}
+                    className="p-2 md:p-3 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg transform transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed min-h-[2.5rem] min-w-[2.5rem] md:min-h-[3rem] md:min-w-[3rem]"
+                  >
+                    <Send className={`h-4 w-4 ${sendingMessage ? 'animate-pulse' : ''}`} />
+                  </Button>
+                </div>
               </form>
             </div>
           </div>
