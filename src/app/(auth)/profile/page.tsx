@@ -6,9 +6,10 @@ import Link from "next/link";
 import { Loader2, Camera, User as UserIcon, LogOut, Users, Upload, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/avatar";
 import { User } from "@/app/types";
+import { useAuth } from "@/context/AuthContext";
 
 const Profile = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, logout: authLogout } = useAuth();
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -16,30 +17,20 @@ const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Fetch current user on mount
+  // User comes from AuthContext, just set loading to false
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/api/users/getCurrentUser");
-        setUser(res.data.data);
-      } catch {
-        // Error fetching user data
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(false);
+  }, [user]);
 
-    fetchUser();
-  }, []);
-
-  // Logout user
-  const logout = async () => {
+  // Logout user using AuthContext
+  const handleLogout = async () => {
     try {
-      // Logging out
-      await api.post("/api/users/logout", {});
+      await authLogout();
       router.push("/login");
-    } catch {
-      // Error during logout
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if logout fails, redirect to login
+      router.push("/login");
     }
   };
 
@@ -134,7 +125,7 @@ const Profile = () => {
                 Back to Chat
               </Link>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center"
               >
                 <LogOut className="h-4 w-4 mr-2" />
@@ -245,7 +236,7 @@ const Profile = () => {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center justify-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium shadow-lg"
           >
             <LogOut className="h-5 w-5 mr-2" />
@@ -361,7 +352,7 @@ const Profile = () => {
         {/* Mobile Logout Button */}
         <div className="sm:hidden fixed bottom-4 left-4 right-4">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center shadow-lg"
           >
             <LogOut className="h-5 w-5 mr-2" />
