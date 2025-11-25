@@ -112,16 +112,8 @@ api.interceptors.response.use(
         // Try to refresh the token
 
 
-        const refreshBaseURL = ''; // Use relative path for refresh token as well
-        const response = await axios.post('/api/users/refresh-token', {}, {
-          withCredentials: true,
-          baseURL: refreshBaseURL,
-          timeout: 10000, // 10 second timeout for refresh requests
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          }
-        })
+        // Use the configured api instance for consistency
+        const response = await api.post('/api/users/refresh-token', {});
 
         if (response.status === 200) {
 

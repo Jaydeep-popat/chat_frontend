@@ -47,10 +47,7 @@ const Profile = () => {
   const getAllUsers = async () => {
     setLoadingUsers(true);
     try {
-      const res = await axios.get(
-        "/api/users/getAlluser",
-        { withCredentials: true }
-      );
+      const res = await api.get("/api/users/getAlluser");
       setAllUsers(res.data.data);
     } catch {
       // Error fetching all users
@@ -68,11 +65,10 @@ const Profile = () => {
       const formData = new FormData();
       formData.append("profilePic", file);
 
-      const res = await axios.post(
+      const res = await api.post(
         "/api/users/updateProfilePicture",
         formData,
         {
-          withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
         }
       );

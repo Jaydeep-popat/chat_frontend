@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "../../utils/api";
-import axios from "axios";
+import { isAxiosError } from "axios";
 import { Lock, Eye, EyeOff, Shield, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 
 const ChangePassword = () => {
@@ -77,7 +77,7 @@ const ChangePassword = () => {
 
     } catch (err: unknown) {
       const message =
-        axios.isAxiosError(err)
+        isAxiosError(err)
           ? err.response?.data?.message || 'Failed to change password. Please try again.'
           : err instanceof Error
             ? err.message
