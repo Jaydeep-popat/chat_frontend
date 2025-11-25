@@ -9,7 +9,7 @@ import { User } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 
 const Profile = () => {
-  const { user, logout: authLogout } = useAuth();
+  const { user, logout: authLogout, updateUser } = useAuth();
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -63,12 +63,8 @@ const Profile = () => {
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-      setUser((prev: User | null) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          profilePic: res.data.data.profilePic,
-        };
+      updateUser({
+        profilePic: res.data.data.profilePic,
       });
       alert("Profile picture updated!");
     } catch {
