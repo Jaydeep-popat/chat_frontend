@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MeanMessenger - Modern Messaging",
+  title: "chatFlow - Modern Messaging",
   description: "Connect, chat, and collaborate in real-time",
   icons: {
     icon: "/icon.png",
