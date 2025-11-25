@@ -1,15 +1,11 @@
 // utils/socket.ts
 import { io, Socket } from "socket.io-client";
 let socket: Socket | null = null;
-export const getTokenFromCookie = (): string | null => {
-  // Try multiple cookie name variations
-  const accessTokenMatch = document.cookie.match(/(?:^|;\s*)accessToken=([^;]*)/);
-  const tokenMatch = document.cookie.match(/(?:^|;\s*)token=([^;]*)/);
-
-  const token = accessTokenMatch?.[1] || tokenMatch?.[1] || null;
-
-
-
+export const getTokenFromStorage = (): string | null => {
+  // Get token from localStorage (Authorization header approach)
+  if (typeof window === 'undefined') return null;
+  
+  const token = localStorage.getItem('accessToken');
   return token;
 };
 export const connectSocket = () => {
@@ -26,13 +22,13 @@ export const connectSocket = () => {
     return socket;
   }
 
-  const token = getTokenFromCookie();
-  const socketURL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://chat-backend-5wt4.onrender.com';
+  const token = getTokenFromStorage();
+  const socketURL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8000';
 
 
 
   socket = io(socketURL, {
-    withCredentials: true, // Enable cookies
+    withCredentials: true, // Enable cookies for backward compatibility
     transports: ["websocket", "polling"], // Allow polling fallback
     forceNew: false, // Don't force new connection
     reconnection: true,
@@ -40,9 +36,13 @@ export const connectSocket = () => {
     reconnectionDelay: 1000,
     timeout: 10000,
     extraHeaders: {
-      // Send token in headers as backup
-      "Authorization": `Bearer ${token || ""}`,
+      // Send token in Authorization header (primary method)
+      "Authorization": token ? `Bearer ${token}` : "",
     },
+    // Also send as query parameter as fallback
+    query: {
+      token: token || ""
+    }
   });
 
   socket.on("connect", () => {

@@ -1,7 +1,7 @@
 // Custom hook for managing socket connection and events
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { Socket } from 'socket.io-client';
-import { connectSocket, getSocket, disconnectSocket, getTokenFromCookie } from './socket';
+import { connectSocket, getSocket, disconnectSocket, getTokenFromStorage } from './socket';
 import { SocketEvents } from '@/app/types';
 
 export const useSocket = (currentUserId: string | null, events: SocketEvents = {}) => {
@@ -19,8 +19,9 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
       return;
     }
 
-    const token = getTokenFromCookie();
+    const token = getTokenFromStorage();
     if (!token) {
+      console.log('No token available for socket connection');
       return;
     }
 
