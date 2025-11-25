@@ -51,9 +51,16 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = []
 }
 
-// Request interceptor
+// Request interceptor - Add Authorization header for authentication
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Get access token from localStorage
+    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+    
     return config
   },
   (error) => {
@@ -109,18 +116,27 @@ api.interceptors.response.use(
       lastRefreshAttempt = now
 
       try {
-        // Try to refresh the token
+        // Get refresh token from localStorage
+        const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+        
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
 
+        // Send refresh token in request body
+        const response = await api.post('/api/users/refresh-token', { refreshToken });
 
-        // Use the configured api instance for consistency
-        const response = await api.post('/api/users/refresh-token', {});
-
-        if (response.status === 200) {
+        if (response.status === 200 && response.data.data?.accessToken) {
+          // Store new tokens
+          localStorage.setItem('accessToken', response.data.data.accessToken);
+          if (response.data.data.refreshToken) {
+            localStorage.setItem('refreshToken', response.data.data.refreshToken);
+          }
 
           refreshAttempts = 0 // Reset attempts on success
           processQueue(null, response.data.data.accessToken)
 
-          // Retry the original request
+          // Retry the original request with new token
           return api(originalRequest)
         }
       } catch (refreshError) {
@@ -138,8 +154,10 @@ api.interceptors.response.use(
 
           refreshAttempts = 0
           if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-            // Clear any stored user data
+            // Clear any stored user data and tokens
             localStorage.removeItem('user')
+            localStorage.removeItem('accessToken')
+            localStorage.removeItem('refreshToken')
             sessionStorage.clear()
 
             // Redirect to login page with appropriate message

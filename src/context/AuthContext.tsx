@@ -63,8 +63,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.post('/api/users/login', credentials);
       
       if (response.data.success && response.data.data?.user) {
+        // Store tokens in localStorage for Authorization header approach
+        const { tokens } = response.data.data;
+        if (tokens?.accessToken) {
+          localStorage.setItem('accessToken', tokens.accessToken);
+        }
+        if (tokens?.refreshToken) {
+          localStorage.setItem('refreshToken', tokens.refreshToken);
+        }
+        
         setUser(response.data.data.user);
         resetRefreshAttempts(); // Reset refresh attempts on successful login
+        
+        console.log('🔑 Tokens stored successfully for Authorization header approach');
       } else {
         throw new Error('Login successful but no user data received');
       }
@@ -79,11 +90,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       await api.post('/api/users/logout', {});
-      setUser(null);
     } catch {
-      // Logout error occurred
-      // Even if logout fails, clear user state
+      // Logout error occurred - continue with cleanup
+      console.log('Logout API call failed, but continuing with local cleanup');
+    } finally {
+      // Always clear local state and tokens
       setUser(null);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
     }
   };
 
