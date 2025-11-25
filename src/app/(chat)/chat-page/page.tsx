@@ -479,7 +479,12 @@ const ChatPage = () => {
 
   // Debug socket connection status
   useEffect(() => {
-    // Socket connection status monitoring
+    console.log('🔍 Socket connection status changed:', {
+      isConnected,
+      currentUserId,
+      hasCurrentUser: !!currentUserId,
+      timestamp: new Date().toISOString()
+    });
   }, [isConnected, currentUserId]);
 
   // Periodic refresh of online users
@@ -638,7 +643,18 @@ const ChatPage = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!newMessage.trim() && !selectedFile) || !selectedUser || !currentUserId) return;
+    console.log('📨 Attempting to send message:', {
+      hasMessage: !!newMessage.trim(),
+      hasFile: !!selectedFile,
+      selectedUser: selectedUser?.name,
+      currentUserId,
+      isConnected
+    });
+
+    if ((!newMessage.trim() && !selectedFile) || !selectedUser || !currentUserId) {
+      console.log('❌ Cannot send message - missing requirements');
+      return;
+    }
 
     setSendingMessage(true);
 

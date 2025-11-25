@@ -1,12 +1,14 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import api from "../../utils/api";
 import { isAxiosError } from "axios";
 import { Lock, Eye, EyeOff, Shield, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const ChangePassword = () => {
+  const { user, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -21,6 +23,13 @@ const ChangePassword = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+
+  // Authentication check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

@@ -11,11 +11,13 @@ export const getTokenFromStorage = (): string | null => {
 export const connectSocket = () => {
   // Return existing socket if connected
   if (socket?.connected) {
+    console.log('🔄 Socket already connected, returning existing socket');
     return socket;
   }
 
   // Don't create new socket if one exists (even if disconnected)
   if (socket) {
+    console.log('🔄 Socket exists but disconnected, reconnecting...');
     if (!socket.connected) {
       socket.connect();
     }
@@ -24,6 +26,12 @@ export const connectSocket = () => {
 
   const token = getTokenFromStorage();
   const socketURL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8000';
+  
+  console.log('🚀 Creating new socket connection:', {
+    socketURL,
+    hasToken: !!token,
+    tokenLength: token ? token.length : 0
+  });
 
 
 
@@ -46,15 +54,26 @@ export const connectSocket = () => {
   });
 
   socket.on("connect", () => {
-    console.log('Socket connected:', socket?.id);
+    console.log('✅ Socket connected successfully!', {
+      socketId: socket?.id,
+      connected: socket?.connected,
+      transport: socket?.io.engine.transport.name
+    });
   });
 
   socket.on("disconnect", (reason) => {
-    console.log('Socket disconnected:', reason);
+    console.log('❌ Socket disconnected:', {
+      reason,
+      socketId: socket?.id
+    });
   });
 
   socket.on("connect_error", (error) => {
-    console.error('Socket connection error:', error);
+    console.error('🚫 Socket connection error:', {
+      error: error.message,
+      stack: error.stack,
+      fullError: error
+    });
   });
 
   socket.on("connection-confirmed", () => {

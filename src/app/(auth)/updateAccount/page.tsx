@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import api from "@/app/utils/api";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const UpdateDetailsPage = () => {
+  const { user, loading: authLoading } = useAuth();
   const [form, setForm] = useState({
     username: "",
     displayName: "",
@@ -14,6 +16,13 @@ const UpdateDetailsPage = () => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const router = useRouter();
+
+  // Authentication check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, authLoading, router]);
 
   // Fetch user on load
   useEffect(() => {

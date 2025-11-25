@@ -15,15 +15,23 @@ export const useSocket = (currentUserId: string | null, events: SocketEvents = {
 
   // Connect to socket when user ID is available (only once)
   useEffect(() => {
+    console.log('🔌 useSocket effect triggered:', {
+      currentUserId: currentUserId,
+      hasUserId: !!currentUserId
+    });
+
     if (!currentUserId) {
+      console.log('❌ No currentUserId, skipping socket connection');
       return;
     }
 
     const token = getTokenFromStorage();
     if (!token) {
-      console.log('No token available for socket connection');
+      console.log('❌ No token available for socket connection');
       return;
     }
+
+    console.log('✅ Token found, proceeding with socket connection');
 
     // Prevent multiple connections for the same user
     if (socketRef.current?.connected) {

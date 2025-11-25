@@ -17,10 +17,15 @@ const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // User comes from AuthContext, just set loading to false
+  // Check authentication and redirect if not authenticated
   useEffect(() => {
     setLoading(false);
-  }, [user]);
+    
+    // If not loading and no user is authenticated, redirect to login
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   // Logout user using AuthContext
   const handleLogout = async () => {
