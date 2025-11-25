@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import api from "@/app/utils/api";
 import Link from "next/link";
 import { Loader2, Camera, User as UserIcon, LogOut, Users, Upload, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/avatar";
@@ -20,10 +20,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get(
-          "/api/users/getCurrentUser",
-          { withCredentials: true }
-        );
+        const res = await api.get("/api/users/getCurrentUser");
         setUser(res.data.data);
       } catch {
         // Error fetching user data
@@ -39,11 +36,7 @@ const Profile = () => {
   const logout = async () => {
     try {
       // Logging out
-      await axios.post(
-        "/api/users/logout",
-        {},
-        { withCredentials: true }
-      );
+      await api.post("/api/users/logout", {});
       router.push("/login");
     } catch {
       // Error during logout

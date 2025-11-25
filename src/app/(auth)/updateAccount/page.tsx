@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import api from "@/app/utils/api";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 
@@ -20,10 +20,7 @@ const UpdateDetailsPage = () => {
     const fetchUser = async () => {
       setFetching(true);
       try {
-        const res = await axios.get(
-          "/api/users/getCurrentUser",
-          { withCredentials: true }
-        );
+        const res = await api.get("/api/users/getCurrentUser");
         const user = res.data.data;
         setForm({
           username: user.username || "",
@@ -48,14 +45,7 @@ const UpdateDetailsPage = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post(
-        "/api/users/updateAccountDetails",
-        form,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "application/json" }
-        }
-      );
+      await api.post("/api/users/updateAccountDetails", form);
       alert("Profile updated successfully!");
       router.push("/profile");
     } catch {
