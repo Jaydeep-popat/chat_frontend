@@ -87,8 +87,22 @@ function Login() {
       
     } catch (error: unknown) {
       console.error('Login failed:', error);
-      const apiError = error as { response?: { data?: { message?: string } } };
-      setError(apiError.response?.data?.message || "Login failed. Please try again.")
+      const apiError = error as { 
+        response?: { data?: { message?: string } }; 
+        message?: string;
+        code?: string;
+      };
+      
+      // Handle cold start and timeout errors with better messaging
+      if (apiError.message?.includes('Server is starting up') || 
+          apiError.message?.includes('timeout') ||
+          apiError.code === 'ECONNABORTED') {
+        setError("🌅 Server is waking up from sleep (this takes 30-60 seconds on free hosting). Please wait and try again.");
+      } else if (apiError.message?.includes('Network Error') || apiError.message?.includes('Connection failed')) {
+        setError("🔌 Connection failed. Server might be starting up, please try again in a moment.");
+      } else {
+        setError(apiError.response?.data?.message || apiError.message || "Login failed. Please try again.");
+      }
     } finally {
       setLoading(false)
     }

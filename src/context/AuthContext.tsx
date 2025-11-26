@@ -77,7 +77,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: { username?: string; email?: string; password: string }) => {
     setLoading(true);
     try {
-      const response = await api.post('/api/users/login', credentials);
+      // Use extended timeout for login (cold starts can take longer)
+      const response = await api.post('/api/users/login', credentials, { timeout: 120000 }); // 2 minutes
       
       if (response.data.success && response.data.data?.user) {
         // Store tokens in localStorage for Authorization header approach
@@ -96,8 +97,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         throw new Error('Login successful but no user data received');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
+      
+      // Provide better error messages for cold start scenarios
+      if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+        throw new Error('Server is starting up. This may take up to 2 minutes on free hosting. Please wait and try again.');
+      }
+      
+      if (error?.message?.includes('Network Error')) {
+        throw new Error('Connection failed. The server might be starting up, please try again in a moment.');
+      }
+      
       throw error;
     } finally {
       setLoading(false);

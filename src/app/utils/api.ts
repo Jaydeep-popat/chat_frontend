@@ -4,7 +4,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://chat-backend-5wt4.onrender.com',
   withCredentials: true,
-  timeout: 10000,
+  timeout: 90000, // 90 seconds to handle Render cold starts
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -36,6 +36,50 @@ export const testAPIConnection = async () => {
   } catch (error) {
     console.error('Health check failed:', error);
     return { success: false, error };
+  }
+}
+
+// Utility to wake up Render service (for cold starts)
+export const wakeUpServer = async (): Promise<boolean> => {
+  try {
+    console.log('🌅 Waking up server (cold start)...');
+    const response = await api.get('/health', { 
+      timeout: 90000 // 90 seconds for cold start
+    });
+    console.log('✅ Server is awake!');
+    return true;
+  } catch (error) {
+    console.warn('⚠️ Server wake-up failed:', error);
+    return false;
+  }
+}
+
+// Enhanced API call with cold start handling
+export const apiWithColdStartHandling = {
+  async get(url: string, config?: any) {
+    try {
+      return await api.get(url, { timeout: 90000, ...config });
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.code === 'ECONNABORTED' || axiosError.message?.includes('timeout')) {
+        console.log('🕒 Request timed out, server might be starting...');
+        throw new Error('Server is starting up, please wait a moment and try again');
+      }
+      throw error;
+    }
+  },
+  
+  async post(url: string, data?: any, config?: any) {
+    try {
+      return await api.post(url, data, { timeout: 90000, ...config });
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      if (axiosError.code === 'ECONNABORTED' || axiosError.message?.includes('timeout')) {
+        console.log('🕒 Request timed out, server might be starting...');
+        throw new Error('Server is starting up, please wait a moment and try again');
+      }
+      throw error;
+    }
   }
 }
 
@@ -123,8 +167,12 @@ api.interceptors.response.use(
           throw new Error('No refresh token available');
         }
 
-        // Send refresh token in request body
-        const response = await api.post('/api/users/refresh-token', { refreshToken });
+        // Send refresh token in request body (backend checks both header and body)
+        const response = await api.post('/api/users/refresh-token', { refreshToken }, {
+          headers: {
+            'Authorization': `Bearer ${refreshToken}`
+          }
+        });
 
         if (response.status === 200 && response.data.data?.accessToken) {
           // Store new tokens
