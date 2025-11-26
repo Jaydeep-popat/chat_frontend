@@ -97,15 +97,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         throw new Error('Login successful but no user data received');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       
+      const axiosError = error as { code?: string; message?: string };
+      
       // Provide better error messages for cold start scenarios
-      if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+      if (axiosError?.code === 'ECONNABORTED' || axiosError?.message?.includes('timeout')) {
         throw new Error('Server is starting up. This may take up to 2 minutes on free hosting. Please wait and try again.');
       }
       
-      if (error?.message?.includes('Network Error')) {
+      if (axiosError?.message?.includes('Network Error')) {
         throw new Error('Connection failed. The server might be starting up, please try again in a moment.');
       }
       

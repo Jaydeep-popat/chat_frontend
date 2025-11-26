@@ -43,7 +43,7 @@ export const testAPIConnection = async () => {
 export const wakeUpServer = async (): Promise<boolean> => {
   try {
     console.log('🌅 Waking up server (cold start)...');
-    const response = await api.get('/health', { 
+    await api.get('/health', { 
       timeout: 90000 // 90 seconds for cold start
     });
     console.log('✅ Server is awake!');
@@ -56,7 +56,7 @@ export const wakeUpServer = async (): Promise<boolean> => {
 
 // Enhanced API call with cold start handling
 export const apiWithColdStartHandling = {
-  async get(url: string, config?: any) {
+  async get(url: string, config?: object) {
     try {
       return await api.get(url, { timeout: 90000, ...config });
     } catch (error) {
@@ -69,7 +69,7 @@ export const apiWithColdStartHandling = {
     }
   },
   
-  async post(url: string, data?: any, config?: any) {
+  async post(url: string, data?: object, config?: object) {
     try {
       return await api.post(url, data, { timeout: 90000, ...config });
     } catch (error) {
